@@ -1,0 +1,115 @@
+all:
+  children:
+    k8s_vm_host:
+      children:
+        k8s_vm_host19:
+        k8s_vm_host20:
+    k8s_ubu:
+      children:
+        k8s_vms1_19:
+        k8s_vms2_19:
+        k8s_vms1_20:
+        k8s_vms2_20:
+    k8s_servers:
+      children:
+        k8s_server_19:
+        k8s_server_20:
+    
+
+k8s_vm_host19:
+  hosts:
+    STR-ACS-SERV-19:
+      ansible_host: 10.251.0.192
+
+k8s_vm_host20:
+  hosts:
+    STR-ACS-SERV-20:
+      ansible_host: 10.251.0.193
+
+k8s_vms1_19:
+  hosts:
+    kvm19-1m1:
+      ansible_host: 10.250.0.2
+      master: true
+      master_leader: true
+    kvm19-1m2:
+      ansible_host: 10.250.0.3
+      master: true
+      master_member: true
+    kvm19-1m3:
+      ansible_host: 10.250.0.4
+      master_member: true
+      master: true
+    kvm19-1ha:
+      ansible_host: 10.250.0.5
+      haproxy: true 
+ 
+k8s_vms2_19:
+  hosts:
+    kvm19-2m1:
+      ansible_host: 10.250.0.6
+      master: true
+      master_leader: true
+    kvm19-2m2:
+      ansible_host: 10.250.0.7
+      master: true
+      master_member: true
+    kvm19-2m3:
+      ansible_host: 10.250.0.8
+      master_member: true
+      master: true
+    kvm19-2ha:
+      ansible_host: 10.250.0.9
+      haproxy: true 
+ 
+k8s_vms1_20:
+  hosts:
+    kvm20-1m1:
+      ansible_host: 10.250.0.10
+      master: true
+      master_leader: true
+    kvm20-1m2:
+      ansible_host: 10.250.0.11
+      master: true
+      master_member: true
+    kvm20-1m3:
+      ansible_host: 10.250.0.12
+      master_member: true
+      master: true
+    kvm20-1ha:
+      ansible_host: 10.250.0.13
+      haproxy: true 
+
+k8s_vms2_20:
+  hosts:
+    kvm20-2m1:
+      ansible_host: 10.250.0.14
+      master: true
+      master_leader: true
+    kvm20-2m2:
+      ansible_host: 10.250.0.15
+      master: true
+      master_member: true
+    kvm20-2m3:
+      ansible_host: 10.250.0.16
+      master_member: true
+      master: true
+    kvm20-2ha:
+      ansible_host: 10.250.0.17
+      haproxy: true 
+
+# The groups below are helper to limit running playbooks to specific server(s) only
+k8s_server_19:
+  vars:
+    host_var_file: host_vars/STR-ACS-SERV-19.yml
+  children:
+    k8s_vm_host19:
+    k8s_vms1_19:
+
+k8s_server_20:
+  vars:
+    host_var_file: host_vars/STR-ACS-SERV-20.yml
+  children:
+    k8s_vm_host20:
+    k8s_vms1_20:
+
