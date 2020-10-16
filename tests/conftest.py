@@ -265,14 +265,14 @@ def k8shosts(ansible_adhoc, creds):
     k8s_ansible_group = "k8s_vms{}_{}".format(master_set_id, master_server_id)
     master_vms = {}
 
-    with open("../ansible/k8s-ubuntu", 'r') as kinv:
-        k8s-inventory = yaml.safe_load(kinv)
-    for hostname, attributes in k8s-inventory[k8s_ansible_group]['hosts'].items():
-        master_vms[hostname[-2:]] = {'host': K8sMasterHost(ansible_adhoc,
-                                                      hostname,
-                                                      attributes['ansible_host'],
-                                                      creds['k8s_master_login'],
-                                                      creds['k8s_master_password'])}
+    with open('../ansible/k8s-ubuntu', 'r') as kinv:
+        k8sinventory = yaml.safe_load(kinv)
+        for hostname, attributes in k8sinventory[k8s_ansible_group]['hosts'].items():
+            master_vms[hostname[-2:]] = {'host': K8sMasterHost(ansible_adhoc,
+                                                          hostname,
+                                                          attributes['ansible_host'],
+                                                          creds['k8s_master_login'],
+                                                          creds['k8s_master_password'])}
     return master_vms
 
 @pytest.fixture(scope="module")

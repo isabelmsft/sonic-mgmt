@@ -1093,10 +1093,10 @@ class K8sMasterHost(AnsibleHostBase):
         self.shell('sudo systemctl start kubelet')
         poll_wait_seconds = 5
         api_server_container_ids = self.shell('sudo docker ps -qf "name=apiserver"')["stdout"].split("\n")
-        while (len(api_server_container_ids) < 2) {
+        while (len(api_server_container_ids) < 2):
             logging.info("Waiting for Kubernetes API server to start")
             time.sleep(poll_wait_seconds)
-        }
+        
 
 
 
