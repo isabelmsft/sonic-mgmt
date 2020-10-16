@@ -1,7 +1,7 @@
 import pytest
 import logging
 import time
-import k8s_test_utilities.py as ku
+import k8s_test_utilities as ku
 
 WAIT_FOR_SYNC = 60
 
