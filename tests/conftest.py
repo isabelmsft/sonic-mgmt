@@ -17,7 +17,7 @@ from collections import defaultdict
 from datetime import datetime
 from tests.common.fixtures.conn_graph_facts import conn_graph_facts
 from tests.common.devices import SonicHost, Localhost
-from tests.common.devices import PTFHost, EosHost, FanoutHost
+from tests.common.devices import PTFHost, EosHost, FanoutHost, K8sMasterHost
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +138,9 @@ def pytest_addoption(parser):
     ########################
     parser.addoption("--deep_clean", action="store_true", default=False,
                      help="Deep clean DUT before tests (remove old logs, cores, dumps)")
-
+    parser.addoption("--skip_fixture_disable_container_autorestart", action="store_true", default=False,
+                     help="The autorestart of containers will be disabled by default. \
+                         Set this option to skip fixture disable_container_autorestart")
 
 @pytest.fixture(scope="session", autouse=True)
 def enhance_inventory(request):
@@ -258,7 +260,7 @@ def ptfhost(ansible_adhoc, tbinfo, duthost):
         return PTFHost(ansible_adhoc, ptf_host)
 
 @pytest.fixture(scope="module")
-def k8shosts(ansible_adhoc, creds):
+def k8shosts(ansible_adhoc, request, creds):
     master_id = request.config.getoption("--kube_master")
     master_server_id = int(master_id[:2])
     master_set_id = int(master_id[3:]) # 19_2
@@ -451,6 +453,12 @@ def tag_test_report(request, pytestconfig, tbinfo, duthost, record_testsuite_pro
 
 @pytest.fixture(scope="module", autouse=True)
 def disable_container_autorestart(duthost, request):
+    command_output = duthost.shell("show feature autorestart", module_ignore_errors=True)
+    if command_output['rc'] != 0:
+        logging.info("Feature autorestart utility not supported. Error: {}".format(command_output['stderr']))
+        logging.info("Skipping disable_container_autorestart fixture")
+        yield
+        return
     skip = False
     for m in request.node.iter_markers():
         if m.name == "enable_container_autorestart":
@@ -473,3 +481,4 @@ def disable_container_autorestart(duthost, request):
     for name, state in container_autorestart_states.items():
         if state == "enabled":
             duthost.command(cmd_enable.format(name))
+    duthost.shell_cmds(cmds=cmd_enable)

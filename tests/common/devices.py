@@ -1062,8 +1062,8 @@ class K8sMasterHost(AnsibleHostBase):
         AnsibleHostBase.__init__(self, ansible_adhoc, hostname)
         evars = {
             'ansible_user': self.k8s_user,
-            'ansible_ssh_user': self.k8s_passwd,
-            'ansible_ssh_pass': self.k8s_user,
+            'ansible_ssh_user': self.k8s_user,
+            'ansible_ssh_pass': self.k8s_passwd,
             'ansible_become_method': 'enable'
         }
         self.host.options['variable_manager'].extra_vars.update(evars)
@@ -1078,7 +1078,7 @@ class K8sMasterHost(AnsibleHostBase):
         k8s_nodes_statuses = self.shell('kubectl get nodes')["stdout"].split("\n")
         logging.info("k8s master node statuses: {}".format(k8s_nodes_statuses))
 
-        for line in k8s_nodes_statuses[1:]:
+        for line in k8s_nodes_statuses[1:4]:
             if "NotReady" in line:
                 return False
         return True
@@ -1096,6 +1096,7 @@ class K8sMasterHost(AnsibleHostBase):
         while (len(api_server_container_ids) < 2):
             logging.info("Waiting for Kubernetes API server to start")
             time.sleep(poll_wait_seconds)
+            api_server_container_ids = self.shell('sudo docker ps -qf "name=apiserver"')["stdout"].split("\n")
         
 
 
