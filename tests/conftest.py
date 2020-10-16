@@ -102,6 +102,9 @@ def pytest_addoption(parser):
     # qos_sai options
     parser.addoption("--ptf_portmap", action="store", default=None, type=str, help="PTF port index to DUT port alias map")
 
+    # Kubernetes master options
+    parser.addoption("--kube_master", action="store", default=None, type=str, help="Kubernetes master identifier in the form {servernumber}_{mastersetnumber}")
+
     ############################
     # pfc_asym options         #
     ############################
@@ -254,6 +257,23 @@ def ptfhost(ansible_adhoc, tbinfo, duthost):
         ptf_host = duthost.host.options["inventory_manager"].get_host(duthost.hostname).get_vars()["ptf_host"]
         return PTFHost(ansible_adhoc, ptf_host)
 
+@pytest.fixture(scope="module")
+def k8shosts(ansible_adhoc, creds):
+    master_id = request.config.getoption("--kube_master")
+    master_server_id = int(master_id[:2])
+    master_set_id = int(master_id[3:]) # 19_2
+    k8s_ansible_group = "k8s_vms{}_{}".format(master_set_id, master_server_id)
+    master_vms = {}
+
+    with open("../ansible/k8s-ubuntu", 'r') as kinv:
+        k8s-inventory = yaml.safe_load(kinv)
+    for hostname, attributes in k8s-inventory[k8s_ansible_group]['hosts'].items():
+        master_vms[hostname[-2:]] = {'host': K8sMasterHost(ansible_adhoc,
+                                                      hostname,
+                                                      attributes['ansible_host'],
+                                                      creds['k8s_master_login'],
+                                                      creds['k8s_master_password'])}
+    return master_vms
 
 @pytest.fixture(scope="module")
 def nbrhosts(ansible_adhoc, tbinfo, creds):
