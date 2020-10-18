@@ -1084,19 +1084,37 @@ class K8sMasterHost(AnsibleHostBase):
         return True
     
     def shutdown_api_server(self):
+        """
+
+        @summary: Shuts down API server container on one K8sMasterHost server
+
+        """
         self.shell('sudo systemctl stop kubelet')
+        logging.info("Shutting down API server on backend master server hostname: {}".format(self.hostname))
         api_server_container_ids = self.shell('sudo docker ps -qf "name=apiserver"')["stdout"].split("\n")
         for id in api_server_container_ids:
             self.shell('sudo docker kill {}'.format(id))
+        api_server_container_ids = self.shell('sudo docker ps -qf "name=apiserver"')["stdout"].split("\n")
+        assert len(api_server_container_ids) == 0
 
     def start_api_server(self):
+        """
+        
+        @summary: Starts API server container on one K8sMasterHost server
+        
+        """
         self.shell('sudo systemctl start kubelet')
-        poll_wait_seconds = 5
+        logging.info("Starting API server on backend master server hostname: {}".format(self.hostname))
+        timeout_wait_secs = 60
+        poll_wait_secs = 5
         api_server_container_ids = self.shell('sudo docker ps -qf "name=apiserver"')["stdout"].split("\n")
-        while (len(api_server_container_ids) < 2):
+        while ((len(api_server_container_ids) < 2) and (timeout_wait_secs > 0)):
             logging.info("Waiting for Kubernetes API server to start")
-            time.sleep(poll_wait_seconds)
+            time.sleep(poll_wait_secs)
+            timeout_wait_secs -= poll_wait_secs
             api_server_container_ids = self.shell('sudo docker ps -qf "name=apiserver"')["stdout"].split("\n")
+        assert len(api_server_container_ids) > 1
+        
         
 
 
