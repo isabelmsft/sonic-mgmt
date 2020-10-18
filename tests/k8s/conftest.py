@@ -1,17 +1,28 @@
 import pytest
 import logging
-import re
 logger = logging.getLogger(__name__)
 
 
 
+@pytest.fixture(autouse=True)
+def check_k8s_vms(k8shosts):
+    """
+    This fixture runs before each k8s test to make sure that Kubernetes API server is reachable on all backend master servers
+    This fixture also runs after each test to start kubelet if necessary- in case test code stopped kubelet, and test failed before reaching logic to start kubelet
 
-@pytest.fixture(scope="module")
-def precheck_k8s_vms(k8shosts):
-    k8s_vms_ready = True
+    Args:
+    k8shosts:  Shortcut fixture for getting Kubernetes hosts
+    """
     for i in range(1, len(k8shosts)):
         k8shost = k8shosts['m{}'.format(i)]['host']
-        logger.info("Check to make sure master and API server are reachable {}".format(k8shost.hostname))
-        if not k8shost.check_k8s_master_ready():
-            k8s_vms_ready = False
-    assert k8s_vms_ready
+        logger.info("Check to make sure master and API server are reachable on{}".format(k8shost.hostname))
+        assert k8shost.check_k8s_master_ready():
+    yield
+    for i in range(1, len(k8shosts)):
+        k8shost = k8shosts['m{}'.format(i)]['host']
+        logger.info("Make sure kubelet is started on {}".format(k8shost.hostname))
+        kubelet_status = duthost.shell("sudo systemctl status kubelet | grep 'Active: '")
+        for line in kubelet_status["stdout_lines"]:
+            if not "running" in line:
+                duthost.shell("sudo systemctl start kubelet")
+

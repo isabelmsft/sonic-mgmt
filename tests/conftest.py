@@ -261,12 +261,15 @@ def ptfhost(ansible_adhoc, tbinfo, duthost):
 
 @pytest.fixture(scope="module")
 def k8shosts(ansible_adhoc, request, creds):
-    master_id = request.config.getoption("--kube_master")
+    """
+    Shortcut fixture for getting Kubernetes hosts
+    """
+    master_id = request.config.getoption("--kube_master") 
+    # master_id is required to be in the format {servernumber}_{mastersetid} where 2-digit servernumber is enforced with leading 0 when necessary
     master_server_id = int(master_id[:2])
-    master_set_id = int(master_id[3:]) # 19_2
+    master_set_id = int(master_id[3:]) 
     k8s_ansible_group = "k8s_vms{}_{}".format(master_set_id, master_server_id)
     master_vms = {}
-
     with open('../ansible/k8s-ubuntu', 'r') as kinv:
         k8sinventory = yaml.safe_load(kinv)
         for hostname, attributes in k8sinventory[k8s_ansible_group]['hosts'].items():
