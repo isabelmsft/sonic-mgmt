@@ -38,29 +38,29 @@ def make_vip_unreachable(duthost, master_vip):
     duthost.shell('sudo iptables -A OUTPUT -d {} -j DROP'.format(master_vip))
 
 
-def make_vip_reachable(duthost, master_vip):
-    """
-    Makes Kubernetes master VIP reachable from SONiC DUT by removing any iptables rules associated with the VIP. 
+# def make_vip_reachable(duthost, master_vip):
+#     """
+#     Makes Kubernetes master VIP reachable from SONiC DUT by removing any iptables rules associated with the VIP. 
 
-    Args:
-        duthost: DUT host object
-        master_vip: VIP of high availability Kubernetes master
-    """
-    logger.info("Making Kubernetes master VIP reachable from DUT")
-    clean_vip_iptables_rules(duthost, master_vip)
+#     Args:
+#         duthost: DUT host object
+#         master_vip: VIP of high availability Kubernetes master
+#     """
+#     logger.info("Making Kubernetes master VIP reachable from DUT")
+#     clean_vip_iptables_rules(duthost, master_vip)
 
 
-def clean_vip_iptables_rules(duthost, master_vip):
-    """
-    Removes all iptables ruls associated with the VIP.
+# def clean_vip_iptables_rules(duthost, master_vip):
+#     """
+#     Removes all iptables ruls associated with the VIP.
 
-    Args:
-        duthost: DUT host object
-        master_vip: VIP of high availability Kubernetes master
-    """
-    iptables_rules = duthost.shell('sudo iptables -S | grep {}'.format(master_vip))["stdout"].split("\n")
-    for line in iptables_rules:
-        duthost.shell('sudo iptables -D {}'.format(line[2:]))
+#     Args:
+#         duthost: DUT host object
+#         master_vip: VIP of high availability Kubernetes master
+#     """
+#     iptables_rules = duthost.shell('sudo iptables -S | grep {}'.format(master_vip))["stdout"].split("\n")
+#     for line in iptables_rules:
+#         duthost.shell('sudo iptables -D {}'.format(line[2:]))
 
 
 def shutdown_all_api_server(k8shosts):
