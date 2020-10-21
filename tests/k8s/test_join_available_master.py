@@ -3,9 +3,16 @@ import logging
 import time
 import k8s_test_utilities as ku
 
+from tests.common.helpers.assertions import pytest_assert
+
 WAIT_FOR_SYNC = 60
 
 logger = logging.getLogger(__name__)
+
+
+pytestmark = [
+    pytest.mark.disable_loganalyzer,  # disable automatic loganalyzer
+]
 
 
 def test_join_available_master(duthost, k8shosts):
@@ -19,7 +26,6 @@ def test_join_available_master(duthost, k8shosts):
     Ensures that DUT joins master only after VIP and API servers are both made available
 
     Args:
-        precheck_k8s_vms: pytest fixture to ensure that each backend master server is reachable, and API server starts as available
         duthost: DUT host object
         k8shosts: shortcut fixture for getting Kubernetes master hosts
     """
@@ -28,6 +34,7 @@ def test_join_available_master(duthost, k8shosts):
     duthost.shell('sudo config kube server disable on')
     ku.make_vip_unreachable(duthost, master_vip)
     ku.shutdown_all_api_server(k8shosts)
+    time.sleep(WAIT_FOR_SYNC)
     
     duthost.shell('sudo config kube server disable off') 
     duthost.shell('sudo config kube server ip {}'.format(master_vip))
@@ -49,6 +56,6 @@ def test_join_available_master(duthost, k8shosts):
     
     server_connect_exp_status = True
     server_connect_act_status = ku.check_connected(duthost)
-    pytest_assert(server_connect_exp_status == server_connect_act_status, "DUT join available master failed, Expected server connected status: {}}, Found server connected status: {}".format(server_connect_exp_status, server_connect_act_status))
+    pytest_assert(server_connect_exp_status == server_connect_act_status, "DUT join available master failed, Expected server connected status: {}, Found server connected status: {}".format(server_connect_exp_status, server_connect_act_status))
 
 

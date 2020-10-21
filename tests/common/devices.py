@@ -1094,8 +1094,8 @@ class K8sMasterHost(AnsibleHostBase):
         api_server_container_ids = self.shell('sudo docker ps -qf "name=apiserver"')["stdout"].split("\n")
         for id in api_server_container_ids:
             self.shell('sudo docker kill {}'.format(id))
-        api_server_container_ids = self.shell('sudo docker ps -qf "name=apiserver"')["stdout"].split("\n")
-        assert len(api_server_container_ids) == 0
+        api_server_container_ids = self.shell('sudo docker ps -qf "name=apiserver"')["stdout"]
+        assert not api_server_container_ids
 
     def start_api_server(self):
         """

@@ -52,15 +52,17 @@ def make_vip_reachable(duthost, master_vip):
 
 def clean_vip_iptables_rules(duthost, master_vip):
     """
-    Removes all iptables ruls associated with the VIP.
+    Removes all iptables rules associated with the VIP.
 
     Args:
         duthost: DUT host object
         master_vip: VIP of high availability Kubernetes master
     """
-    iptables_rules = duthost.shell('sudo iptables -S | grep {}'.format(master_vip))["stdout"].split("\n")
+    iptables_rules = duthost.shell('sudo iptables -S | grep {} || true'.format(master_vip))["stdout"].split("\n")
+    logger.info('iptables rules: {}'.format(iptables_rules))
     for line in iptables_rules:
-        duthost.shell('sudo iptables -D {}'.format(line[2:]))
+        if line: 
+            duthost.shell('sudo iptables -D {}'.format(line[2:]))
 
 
 def shutdown_all_api_server(k8shosts):
