@@ -336,7 +336,7 @@ function start_k8s_vms
 
   echo "Starting Kubernetes VMs on server '${server}'"
 
-  ANSIBLE_SCP_IF_SSH=y ansible-playbook -i $vmfile testbed_start_k8s_VMs.yml --vault-password-file="${passwd}" -e k8s="true" -l "${server}" $@
+  ANSIBLE_SCP_IF_SSH=y ansible-playbook -i $vmfile testbed_start_k8s_VMs.yml -vvv --vault-password-file="${passwd}" -e k8s="true" -l "${server}" $@
 }
 
 function setup_k8s_vms
@@ -347,7 +347,7 @@ function setup_k8s_vms
 
   echo "Setting up Kubernetes VMs on server '${server}'"
  
-  ANSIBLE_SCP_IF_SSH=y ansible-playbook -i $vmfile testbed_setup_k8s_master.yml -e servernumber="${servernumber}" -e k8s="true" -e msetnumber="${msetnumber}"
+  ANSIBLE_SCP_IF_SSH=y ansible-playbook -i $vmfile testbed_setup_k8s_master.yml -vvvvv -e servernumber="${servernumber}" -e k8s="true" -e msetnumber="${msetnumber}"
 }
 
 function stop_k8s_vms
