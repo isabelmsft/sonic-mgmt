@@ -138,9 +138,6 @@ def pytest_addoption(parser):
     ########################
     parser.addoption("--deep_clean", action="store_true", default=False,
                      help="Deep clean DUT before tests (remove old logs, cores, dumps)")
-    parser.addoption("--skip_fixture_disable_container_autorestart", action="store_true", default=False,
-                     help="The autorestart of containers will be disabled by default. \
-                         Set this option to skip fixture disable_container_autorestart")
 
 @pytest.fixture(scope="session", autouse=True)
 def enhance_inventory(request):
@@ -456,12 +453,6 @@ def tag_test_report(request, pytestconfig, tbinfo, duthost, record_testsuite_pro
 
 @pytest.fixture(scope="module", autouse=True)
 def disable_container_autorestart(duthost, request):
-    command_output = duthost.shell("show feature autorestart", module_ignore_errors=True)
-    if command_output['rc'] != 0:
-        logging.info("Feature autorestart utility not supported. Error: {}".format(command_output['stderr']))
-        logging.info("Skipping disable_container_autorestart fixture")
-        yield
-        return
     skip = False
     for m in request.node.iter_markers():
         if m.name == "enable_container_autorestart":
@@ -484,4 +475,3 @@ def disable_container_autorestart(duthost, request):
     for name, state in container_autorestart_states.items():
         if state == "enabled":
             duthost.command(cmd_enable.format(name))
-    duthost.shell_cmds(cmds=cmd_enable)
