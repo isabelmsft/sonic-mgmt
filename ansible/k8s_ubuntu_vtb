@@ -27,19 +27,19 @@ k8s_vm_host21:
 k8s_vms1_21:
   hosts:
     kvm21-1m1:
-      ansible_host: 10.250.2.102
+      ansible_host: 10.250.0.102
       master: true
       master_leader: true
     kvm21-1m2:
-      ansible_host: 10.250.2.103
+      ansible_host: 10.250.0.103
       master: true
       master_member: true
     kvm21-1m3:
-      ansible_host: 10.250.2.104
+      ansible_host: 10.250.0.104
       master_member: true
       master: true
     kvm21-1ha:
-      ansible_host: 10.250.2.105
+      ansible_host: 10.250.0.105
       haproxy: true 
 
 k8s_vms2_21:
