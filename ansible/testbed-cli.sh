@@ -27,7 +27,7 @@ function usage
   echo "    <vault-password-file> : Path to file containing Ansible Vault password"
   echo "    <topo-name>           : Name of the target topology"
   echo "    <inventory>           : Name of the Ansible inventory containing the DUT"
-  echo "    <k8s-server-name>     : Server identifier in form k8s_server_{id}, corresponds to k8s_ubuntu_vtb inventory group name"
+  echo "    <k8s-server-name>     : Server identifier in form k8s_server_{id}, corresponds to k8s_ubuntu inventory group name"
   echo
   echo "To start all VMs on a server: $0 start-vms 'server-name' ~/.password"
   echo "To restart a subset of VMs:"
@@ -55,8 +55,8 @@ function usage
   echo "        -e enable_data_plane_acl=true"
   echo "        -e enable_data_plane_acl=false"
   echo "        by default, data acl is enabled"
-  echo "To create Kubernetes master on a server: $0 -m k8s_ubuntu_vtb create-master 'k8s-server-name'  ~/.password"
-  echo "To destroy Kubernetes master on a server: $0 -m k8s_ubuntu_vtb destroy-master 'k8s-server-name' ~/.password"
+  echo "To create Kubernetes master on a server: $0 -m k8s_ubuntu create-master 'k8s-server-name'  ~/.password"
+  echo "To destroy Kubernetes master on a server: $0 -m k8s_ubuntu destroy-master 'k8s-server-name' ~/.password"
   echo
   echo "You should define your topology in testbed CSV file"
   echo
@@ -336,7 +336,7 @@ function start_k8s_vms
 
   echo "Starting Kubernetes VMs on server '${server}'"
 
-  ANSIBLE_SCP_IF_SSH=y ansible-playbook -i $vmfile testbed_start_k8s_VMs.yml -vvv --vault-password-file="${passwd}" -e k8s="true" -l "${server}" $@
+  ANSIBLE_SCP_IF_SSH=y ansible-playbook -i $vmfile testbed_start_k8s_VMs.yml --vault-password-file="${passwd}" -e k8s="true" -l "${server}" $@
 }
 
 function setup_k8s_vms
@@ -347,7 +347,7 @@ function setup_k8s_vms
 
   echo "Setting up Kubernetes VMs on server '${server}'"
  
-  ANSIBLE_SCP_IF_SSH=y ansible-playbook -i $vmfile testbed_setup_k8s_master.yml -vvvvv -e servernumber="${servernumber}" -e k8s="true" -e msetnumber="${msetnumber}"
+  ANSIBLE_SCP_IF_SSH=y ansible-playbook -i $vmfile testbed_setup_k8s_master.yml -e servernumber="${servernumber}" -e k8s="true" -e msetnumber="${msetnumber}"
 }
 
 function stop_k8s_vms
