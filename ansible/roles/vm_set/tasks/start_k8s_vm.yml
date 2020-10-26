@@ -1,4 +1,4 @@
-- name: Creata directory for Ubuntu VM disks
+- name: Create directory for Ubuntu VM disks
   file: path={{ k8s_root_path }}/{{ vm_name }} state=directory mode=0777
   become: yes
 
