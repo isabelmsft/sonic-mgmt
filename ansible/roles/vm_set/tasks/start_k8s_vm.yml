@@ -42,7 +42,7 @@
         --noautoconsole
         --name {{ vm_name }}
         --memory 4098
-        --vcpus  1
+        --vcpus 2
         --disk {{ disk_image }},device=disk,bus=virtio 
         --disk {{ k8s_root_path }}/{{ vm_name }}/{{ vm_name }}_cloud-config.img,device=cdrom 
         --os-type linux 
