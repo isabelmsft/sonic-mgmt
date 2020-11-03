@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 WAIT_FOR_SYNC = 60
 
 
-def join_master(duthost, master_vip):
+def join_master(duthost, k8shosts):
     """
     Joins DUT to Kubernetes master
 
@@ -16,12 +16,13 @@ def join_master(duthost, master_vip):
 
     If join fails, test will fail at the assertion to check_connected
     """
+    master_vip = k8shosts['ha']['host'].ip_addr
     logger.info("Joining DUT to Kubernetes master")
-    duthost.shell('sudo config kube server disable on')
     duthost.shell('sudo config kube server ip {}'.format(master_vip))
     duthost.shell('sudo config kube server disable off')
     time.sleep(WAIT_FOR_SYNC)
     assert check_connected(duthost)
+    duthost.shell('sudo config save -y')
     
 
 def make_vip_unreachable(duthost, master_vip):
