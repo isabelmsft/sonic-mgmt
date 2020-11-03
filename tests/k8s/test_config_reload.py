@@ -2,18 +2,25 @@ import pytest
 import logging
 import time
 import k8s_test_utilities as ku
+
+from tests.common.helpers.assertions import pytest_assert
 from tests.common.platform.processes_utils import wait_critical_processes
 
 WAIT_FOR_SYNC = 60
 
 logger = logging.getLogger(__name__)
 
+
+pytestmark = [
+    pytest.mark.disable_loganalyzer,
+]
+
+
 """when DUT starts as joined to master and config is saved as disable=false, DUT remains joined after config reload"""
 def test_config_reload_no_toggle(duthost, k8shosts):
     ku.join_master(duthost, k8shosts) # Assertion within to ensure successful join
     duthost.shell('sudo config reload -y')
     wait_critical_processes(duthost)
-    time.sleep(WAIT_FOR_SYNC)
 
     server_connect_exp_status = True
     server_connect_act_status = ku.check_connected(duthost)
@@ -32,7 +39,6 @@ def test_config_reload_toggle_join(duthost, k8shosts):
     
     duthost.shell('sudo config reload -y')
     wait_critical_processes(duthost)
-    time.sleep(WAIT_FOR_SYNC)
 
     server_connect_exp_status = True
     server_connect_act_status = ku.check_connected(duthost)
@@ -52,7 +58,6 @@ def test_config_reload_toggle_reset(duthost, k8shosts):
 
     duthost.shell('sudo config reload -y')
     wait_critical_processes(duthost)
-    time.sleep(WAIT_FOR_SYNC)
 
     server_connect_exp_status = False
     server_connect_status = ku.check_connected(duthost)

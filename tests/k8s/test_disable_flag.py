@@ -3,12 +3,18 @@ import logging
 import time
 import k8s_test_utilities as ku
 
+from tests.common.helpers.assertions import pytest_assert
+
 WAIT_FOR_SYNC = 60
 
 logger = logging.getLogger(__name__)
 
+pytestmark = [
+    pytest.mark.disable_loganalyzer, # disable automatic loganalyzer
+]
 
-def test_disable_flag(precheck_k8s_vms, duthost, k8shosts):
+
+def test_disable_flag(duthost, k8shosts):
    ku.join_master(duthost, k8shosts) # Assertion within to ensure successful join
 
    duthost.shell('sudo config kube server disable on')
