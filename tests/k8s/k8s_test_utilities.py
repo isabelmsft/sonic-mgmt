@@ -21,7 +21,7 @@ def join_master(duthost, k8shosts):
     duthost.shell('sudo config kube server ip {}'.format(master_vip))
     duthost.shell('sudo config kube server disable off')
     time.sleep(WAIT_FOR_SYNC)
-    assert check_connected(duthost)
+    assert poll_check_connected(duthost)
     duthost.shell('sudo config save -y')
     
 
@@ -91,6 +91,25 @@ def start_all_api_server(k8shosts):
         logger.info("Starting API Server on master node m{}".format(i))
         k8shost.start_api_server()
 
+def poll_check_connected(duthost, poll_time_start=20, poll_wait_loop=5, poll_time_end=120):
+    """
+    Polls DUT server connected status
+
+    Args:
+        duthost: DUT host object
+        poll_time_start: Start polling status after poll_time_start seconds have passed. Default: 20
+        poll_wait_loop: Poll every poll_wait_loop seconds checking for server connected status. Default: 5
+        poll_time_max: Stop polling after poll_time_end seconds have elapsed. Default: 120
+    """
+    time.sleep(poll_time_start)
+    time_elapsed = poll_time_start
+    while (time_elapsed < poll_time_end):
+        if check_connected(duthost):
+            return true
+        time.sleep(poll_wait_loop)
+        time_elapsed += poll_wait_loop
+    return false
+        
 
 def check_connected(duthost):
     """

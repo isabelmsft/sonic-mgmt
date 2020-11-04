@@ -41,21 +41,21 @@ def test_join_available_master(duthost, k8shosts):
     time.sleep(WAIT_FOR_SYNC)
     
     server_connect_exp_status = False
-    server_connect_act_status = ku.check_connected(duthost)
+    server_connect_act_status = ku.poll_check_connected(duthost)
     pytest_assert(server_connect_exp_status == server_connect_act_status, "DUT join available master failed, Expected server connected status: {}, Found server connected status: {}".format(server_connect_exp_status, server_connect_act_status))
 
     ku.make_vip_reachable(duthost, master_vip)
     time.sleep(WAIT_FOR_SYNC)
     
     server_connect_exp_status = False
-    server_connect_act_status = ku.check_connected(duthost)
+    server_connect_act_status = ku.poll_check_connected(duthost)
     pytest_assert(server_connect_exp_status == server_connect_act_status, "DUT join available master failed, Expected server connected status: {}, Found server connected status: {}".format(server_connect_exp_status, server_connect_act_status))
 
     ku.start_all_api_server(k8shosts)
     time.sleep(WAIT_FOR_SYNC)
     
     server_connect_exp_status = True
-    server_connect_act_status = ku.check_connected(duthost)
+    server_connect_act_status = ku.poll_check_connected(duthost)
     pytest_assert(server_connect_exp_status == server_connect_act_status, "DUT join available master failed, Expected server connected status: {}, Found server connected status: {}".format(server_connect_exp_status, server_connect_act_status))
 
 
