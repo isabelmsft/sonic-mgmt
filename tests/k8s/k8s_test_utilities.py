@@ -1,12 +1,15 @@
 import logging
 import time
+import yaml
+import re
 
 from tests.common.helpers.assertions import pytest_assert
 
 logger = logging.getLogger(__name__)
 
 WAIT_FOR_SYNC = 60 # time unit seconds
-
+KUBECONFIG_PATH = /etc/sonic/kube_admin.conf
+MANIFESTS_PATH=/etc/kubernetes/manifests
 
 def join_master(duthost, master_vip):
     """
@@ -67,7 +70,7 @@ def clean_vip_iptables_rules(duthost, master_vip):
             duthost.shell('sudo iptables -D {}'.format(line[2:]))
 
 
-def check_connected(duthost):
+def check_connected(duthost, exp_status):
     """
     Checks if the DUT already shows status 'connected' to Kubernetes master
 
@@ -77,15 +80,20 @@ def check_connected(duthost):
     Returns:
         True if connected, False if not connected
     """
-    kube_server_status = duthost.shell('show kube server')["stdout_lines"]
+    kube_server_status = duthost.shell('show kube server status')["stdout_lines"]
     logger.info("Kube server status: {}".format(kube_server_status))
     for line in kube_server_status:
-        if line.startswith("KUBERNETES_MASTER SERVER connected"):
-            return line.endswith("true")
-    logger.info("Kubernetes server check_connected failed to check server status")
+        if line.contains(exp_status)
+            return True
 
+def check_feature_owner(duthost, feature, exp_owner):
+    kube_owner_status = duthost.shell('show feature status {}'.format(feature))
+    logger.info("Kube feature {} owner status: {}".format(feature, kube_owner_status))
+    for line in kube_owner_status:
+        if line.startswith(''.format(feature)):
+            return line.endswith(exp_owner)
 
-def poll_for_status_change(duthost, exp_status, poll_wait_secs=5, min_wait_time=20, max_wait_time=120):
+def poll_for_status_change(duthost, status_to_check, exp_status, feature=None, poll_wait_secs=5, min_wait_time=20, max_wait_time=120):
     """
     Polls to see if kube server connected status updates as expected
 
@@ -103,9 +111,38 @@ def poll_for_status_change(duthost, exp_status, poll_wait_secs=5, min_wait_time=
     time.sleep(min_wait_time)
     timeout_wait_secs = max_wait_time - min_wait_time
     while (timeout_wait_secs > 0):
-       if (check_connected(duthost) == exp_status):
-           logging.info("Time taken to update status: {} seconds".format(timeout_wait_secs))
-           return True
+        if (status_to_check == 'connected'):
+            if (check_connected(duthost, exp_status)):
+                logging.info("Time taken to update status: {} seconds".format(timeout_wait_secs))
+                return True
+        elif (status_to_check == 'feature_owner'):
+            if (check_feature_owner(duthost, exp_status, feature)):
+                logging.info("Time taken to update status: {} seconds".format(timeout_wait_secs))
+                return True
        time.sleep(poll_wait_secs)
        timeout_wait_secs -= poll_wait_secs
     return False
+
+def apply_manifest(duthost, k8scluster, feature, version, valid_url):
+    feature_manifest_path = "{}/{}.yaml".format(MANIFESTS_PATH, feature)
+    fill_manifest_template(duthost, feature_manifest_path, version, valid_url)
+    duthost.shell('kubectl --kubeconfig={} apply -f {}'.format(KUBECONFIG_PATH, feature_manifest_path))
+
+def fill_manifest_template(duthost, k8scluster, feature_manifest_template, version, valid_url):
+    registry_address = '{}:5000'.format(k8scluster.get_master_vip())
+    with open(feature_manifest_template) as f:
+        manifest_data = yaml.safe_load(f)
+    manifest_data['metadata']['name'] = '{}-v{}'.format(feature, version)
+    if valid_url:
+        manifest_data['spec']['template']['spec']['containers']['image'] = '{}:{}:{}'.format(registry_address, feature, version)
+    else:
+        manifest_data['spec']['template']['spec']['containers']['image'] = '{}:{}:{}ext'.format(registry_address, feature, version)
+    
+def get_feature_version(duthost, feature):
+    base_image_version = duthost.os_version.split('.')[0]
+    feature_status = duthost.shell('show feature status {} | grep {}'.format(feature, feature)).split()
+    for value in feature_status:
+        if base_image_version in word:
+            feature_version = word
+    return feature_version
+    
