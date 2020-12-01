@@ -7,9 +7,9 @@ from tests.common.helpers.assertions import pytest_assert
 
 logger = logging.getLogger(__name__)
 
-WAIT_FOR_SYNC = 60 # time unit seconds
+
 KUBECONFIG_PATH = /etc/sonic/kube_admin.conf
-MANIFESTS_PATH=/etc/kubernetes/manifests
+
 
 def join_master(duthost, master_vip):
     """
@@ -73,7 +73,7 @@ def clean_vip_iptables_rules(duthost, master_vip):
 def check_connected(duthost, exp_status):
     """
     Checks if the DUT already shows status 'connected' to Kubernetes master
-
+    
     Args:
         duthost: DUT host object
     
@@ -111,6 +111,7 @@ def poll_for_status_change(duthost, status_to_check, exp_status, feature=None, p
     time.sleep(min_wait_time)
     timeout_wait_secs = max_wait_time - min_wait_time
     while (timeout_wait_secs > 0):
+<<<<<<< HEAD
         if (status_to_check == 'connected'):
             if (check_connected(duthost, exp_status)):
                 logging.info("Time taken to update status: {} seconds".format(timeout_wait_secs))
@@ -119,6 +120,11 @@ def poll_for_status_change(duthost, status_to_check, exp_status, feature=None, p
             if (check_feature_owner(duthost, exp_status, feature)):
                 logging.info("Time taken to update status: {} seconds".format(timeout_wait_secs))
                 return True
+=======
+       if (check_connected(duthost) == exp_status):
+           logging.info("Time taken to update Kube server status: {} seconds".format(timeout_wait_secs))
+           return True
+>>>>>>> upstream/master
        time.sleep(poll_wait_secs)
        timeout_wait_secs -= poll_wait_secs
     return False
