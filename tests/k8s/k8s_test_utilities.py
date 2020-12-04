@@ -8,7 +8,7 @@ from tests.common.helpers.assertions import pytest_assert
 logger = logging.getLogger(__name__)
 
 
-KUBECONFIG_PATH = /etc/sonic/kube_admin.conf
+KUBECONFIG_PATH = '/etc/sonic/kube_admin.conf'
 CONTAINER_REGISTRY_PORT = 5000
 
 
@@ -27,7 +27,7 @@ def join_master(duthost, master_vip):
                      'sudo config kube server ip {}'.format(master_vip),
                      'sudo config kube server disable off']
     duthost.shell_cmds(cmds=dut_join_cmds)
-    pytest_assert(poll_for_status_change(duthost, True),"DUT failed to successfully join Kubernetes master")
+    pytest_assert(poll_for_status_change(duthost, 'connected', True),"DUT failed to successfully join Kubernetes master")
     
 
 def make_vip_unreachable(duthost, master_vip):
@@ -122,7 +122,7 @@ def check_feature_owner(duthost, feature):
     for line in kube_owner_status:
         if line.startswith(feature):
             feature_status = line.split()
-            return feature_status[-1]
+            return feature_status[-2]
 
 
 def check_feature_version(duthost, feature):
@@ -209,10 +209,10 @@ def prepare_registry(duthost, master_vip, feature, version):
         version: image version feature to simulate
     """
     feature_version_env = '{}.{}'.format(duthost.os_version.split('.')[0], version)
-    feature_image_id = duthost.shell("docker inspect {} | grep '"Image": "sha256' | sed 's/^.*://' | cut -c1-64".format(feature))["stdout"]
+    feature_image_id = duthost.shell("docker inspect {} | grep sha256 | sed 's/^.*://' | cut -c1-64".format(feature))["stdout"]
     feature_update_image_path = '{}:5000/{}_{}-v{}'.format(master_vip, duthost.hostname, feature, version)
-    duthost.shell('docker commit --change "ENV IMAGE_VERSION={} {} {}'.format(feature_version_env, feature, feature_update_image_path))
-    duthost.shell('docker push {}', feature_update_image_path)
+    duthost.shell('docker commit --change "ENV IMAGE_VERSION={}" {} {}'.format(feature_version_env, feature, feature_update_image_path))
+    duthost.shell('docker push {}'.format(feature_update_image_path))
     duthost.shell('docker rmi {}'.format(feature_update_image_path))
 
 
@@ -237,8 +237,10 @@ def generate_manifest(duthost, master_vip, feature, version, valid_url):
     kube_manifests_path = '/home/admin/kube_manifests'
     # duthost.shell('docker inspect {} | grep manifest > /home/admin/{}-template.yaml'.format(feature, feature, version) )
     duthost.shell('mkdir -p {}'.format(kube_manifests_path))
+    duthost.shell('sudo chmod -R 777 {}'.format(kube_manifests_path))
     filled_manifest_path = '{}/{}-v{}.yaml'.format(kube_manifests_path, feature, version)
-    duthost.shell('sed s/%IMAGE_URL%/$feature_image_url/g \ {}-template.yaml > {}/{}-v{}.yaml'.format(feature, kube_manifests_path, feature, version)) 
+    # duthost.shell('cd /home/admin')
+    duthost.shell('sed s#%IMAGE_URL%#{}#g /home/admin/{}-template.yaml > {}/{}-v{}.yaml'.format(feature_image_url, feature, kube_manifests_path, feature, version)) 
     return filled_manifest_path
     # with open(feature_manifest_template) as f:
     #    manifest_data = yaml.safe_load(f)

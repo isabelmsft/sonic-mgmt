@@ -41,7 +41,7 @@ def test_local_kube_success_manifest(duthost, k8scluster):
 
     duthost.shell('sudo config feature owner {} kube'.format(feature))
     pytest_assert(ku.poll_for_status_change(duthost, 'feature_owner', 'kube', feature), '{} feature owner failed to update to kube as expected'.format(feature))
-    pytest_assert(ku.is_service_running(duthost, feature)), "{} service is not running".format(feature))
+    pytest_assert(ku.is_service_running(duthost, feature), "{} service is not running".format(feature))
     running_feature_version = ku.check_feature_version(duthost, feature)
     pytest_assert(running_feature_version == desired_feature_version), "Unexpected {} feature version running. Expected feature version: {}, Found feature version: {}".format(feature, desired_feature_version, running_feature_version)
 
