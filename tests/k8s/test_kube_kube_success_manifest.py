@@ -15,42 +15,50 @@ pytestmark = [
     pytest.mark.disable_loganalyzer,  # disable automatic loganalyzer
 ]
 
-
-def test_kube_local_transition(duthost, k8shosts):
+# @pytest.mark.parametrize("feature", ["snmp", "dhcp_relay", "radv"])
+def test_kube_kube_success_manifest(duthost, k8scluster):
     """
-    Test case to ensure DUT properly transitions between local mode and kube mode when manifest is properly applied.
+    Test case to ensure DUT properly transitions from running kube mode feature v111 to upgraded kube mode feature v200 once newer version manifest is applied
 
     Ensures that DUT is joined to Kubernetes master
 
-    Applies valid manifest for kube mode feature, expect transition from local to kube mode once image is downloaded from ACR
+    Applies valid manifest for kube mode feature v111, expect transition from local to kube mode once image is downloaded from ACR
 
-    Configure owner back to local mode, expect transition from kube to local mode
+    Applies valid manifest for kube mode feature v200, expect running feature version to update to v200 
 
-    Configure owner back to kube mode, expect transition from local to kube mode with previously downloaded kube mode image
+    Stops feature service, ensure feature stops as expected
+
+    Starts feature service, ensure feature starts as expected
 
     Args:
-        ensure_manifests_present: Shortcut fixture to ensure that manifests are present on Kubernetes master
         duthost: DUT host object
-        k8shosts: shortcut fixture for getting Kubernetes master hosts
+        k8scluster: shortcut fixture for getting cluster of Kubernetes master hosts
     """
 
-    master_vip = k8scluster.get_master_vip()
-    ku.join_master(duthost, master_vip) # Assertion within to ensure successful join
+    ku.join_master(duthost, k8scluster.vip) # Assertion within to ensure successful join
     
     feature='snmp'
-    version='111'
-    ku.apply_manifest(duthost, feature, version, True)
+    desired_feature_version='111'
+    ku.apply_manifest(duthost, k8scluster.vip, feature, desired_feature_version, True)
 
     duthost.shell('sudo config feature owner {} kube'.format(feature))
-    ku.poll_for_owner_change(duthost, 'kube')
-    assert wait_until(300, 20, duthost.is_service_fully_started, "snmp"), "SNMP service is not running"
-    ku.validate_version(duthost, feature, version)
+    pytest_assert(ku.poll_for_status_change(duthost, 'feature_owner', 'kube', feature), "Unexpected feature owner")
+    pytest_assert(ku.is_service_running(duthost, feature), "{} service is not running".format(feature))
+    running_feature_version = ku.check_feature_version(duthost, feature)
+    pytest_assert(running_feature_version == desired_feature_version), "Unexpected {} feature version running. Expected feature version: {}, Found feature version: {}".format(feature, desired_feature_version, running_feature_version)
 
-    version='200'
-    ku.apply_manifest(duthost, feature, version, True)
-    
-    duthost.shell('sudo config feature owner {} kube'.format(feature))
-    ku.poll_for_owner_change(duthost, 'kube')
-    assert wait_until(300, 20, duthost.is_service_fully_started, "snmp"), "SNMP service is not running" ')
-    ku.validate_version(duthost, feature, version)
+    desired_feature_version='200'
+    ku.apply_manifest(duthost, k8scluster.vip, feature, desired_feature_version, True)
+
+    pytest_assert(ku.poll_for_status_change(duthost, 'feature_version', desired_feature_version, feature), "Unexpected feature version")
+    pytest_assert(ku.is_service_running(duthost, feature), "{} service is not running".format(feature))
+
+    duthost.shell('sudo systemctl stop {}'.format(feature))
+    pytest_assert(not ku.is_service_running(duthost, feature), "{} service is unexpectedly running".format(feature))
+
+    duthost.shell('sudo systemctl start {}'.format(feature))
+    pytest_assert(ku.is_service_running(duthost, feature), "{} service is not running".format(feature))
+
+    duthost.shell('sudo config feature owner {} local'.format(feature))
+    pytest_assert(ku.poll_for_status_change(duthost, 'feature_owner', 'local', feature), "Unexpected feature owner status")
     

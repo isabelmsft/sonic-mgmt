@@ -15,41 +15,55 @@ pytestmark = [
     pytest.mark.disable_loganalyzer,  # disable automatic loganalyzer
 ]
 
-
-def test_kube_local_transition(duthost, k8shosts):
+# @pytest.mark.parametrize("feature", ["snmp", "dhcp_relay", "radv"])
+def test_local_kube_failed_manifest(duthost, k8scluster):
     """
-    Test case to ensure DUT properly transitions between local mode and kube mode when manifest is properly applied.
+    Test case to ensure DUT properly transitions from local mode to kube mode only when manifest is properly applied.
+    If manifest application fails, feature should remain running in local mode until kube mode feature is properly made available. 
 
     Ensures that DUT is joined to Kubernetes master
 
-    Applies valid manifest for kube mode feature, expect transition from local to kube mode once image is downloaded from ACR
+    Applies invalid URL manifest for kube mode feature, ensures that feature continues running in local mode
 
-    Configure owner back to local mode, expect transition from kube to local mode
+    Stops feature service, ensures that feature stops as expected
 
-    Configure owner back to kube mode, expect transition from local to kube mode with previously downloaded kube mode image
+    Starts feature service, ensures that feature starts as expected
+
+    Fixes manifest URL and reapplies manifest, ensures feature transitions as expected 
 
     Args:
-        ensure_manifests_present: Shortcut fixture to ensure that manifests are present on Kubernetes master
         duthost: DUT host object
-        k8shosts: shortcut fixture for getting Kubernetes master hosts
+        k8scluster: shortcut fixture for getting cluster of Kubernetes master hosts
     """
 
-    master_vip = k8scluster.get_master_vip()
-    ku.join_master(duthost, master_vip) # Assertion within to ensure successful join
-    orig_local_version= ku.get_feature_version(feature)
+    ku.join_master(duthost, k8scluster.vip) # Assertion within to ensure successful join
     
     feature='snmp'
-    version='111'
-    ku.apply_manifest(duthost, feature, version, False)
+    desired_feature_version='111'
 
+    ku.apply_manifest(duthost, k8scluster.vip, feature, desired_feature_version, False)
     duthost.shell('sudo config feature owner {} kube'.format(feature))
-    pytest_assert(not ku.poll_for_owner_change(duthost, 'kube'), "Feature owner unexpectedly changed to kube")
-    pytest_assert(duthost.is_service_fully_started("snmp"), "SNMP service is not running")
-    ku.validate_version(duthost, feature, orig_local_version)
+    local_running_version = ku.check_feature_version(duthost, feature)
 
-    ku.apply_manifest(duthost, feature, version, True)
+    pytest_assert(not ku.poll_for_status_change(duthost, 'feature_owner', 'kube', feature), "Feature owner unexpectedly changed to kube")
+    pytest_assert(ku.is_service_running(duthost, feature), "{} service is not running".format(feature))
     
-    pytest_assert(ku.poll_for_owner_change(duthost, 'kube'))
-    assert wait_until(300, 20, duthost.is_service_fully_started, "snmp"), "SNMP service is not running")
-    ku.validate_version(duthost, feature, version)
+    current_running_version = ku.check_feature_version(duthost, feature)
+    pytest_assert(local_running_version == current_running_version, "{} feature version unexpectedly change".format(feature))
+
+    duthost.shell('sudo systemctl stop {}'.format(feature))
+    pytest_assert(not ku.is_service_running(duthost, feature), "{} service is unexpectedly running".format(feature))
+
+    duthost.shell('sudo systemctl start {}'.format(feature))
+    pytest_assert(ku.is_service_running(duthost, feature), "{} service is not running".format(feature))
+
+    ku.apply_manifest(duthost, k8scluster.vip, feature, desired_feature_version, True)
+    
+    pytest_assert(ku.poll_for_status_change(duthost, 'feature_owner', 'kube', feature), '{} feature owner failed to update to kube'.format(feature))
+    pytest_assert(ku.is_service_running(duthost, feature), "{} service is not running".format(feature))
+    running_feature_version = ku.check_feature_version(duthost, feature)
+    pytest_assert(running_feature_version == desired_feature_version), "Unexpected {} feature version running. Expected feature version: {}, Found feature version: {}".format(feature, desired_feature_version, running_feature_version)
+
+    duthost.shell('sudo config feature owner {} local'.format(feature))
+    pytest_assert(ku.poll_for_status_change(duthost, 'feature_owner', 'local', feature), "Unexpected feature owner status")
     
